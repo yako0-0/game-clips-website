@@ -43,86 +43,76 @@
             <ul>
                 <li><a href="/">Home</a></li>
                 <li><a href="/watch">Watch</a></li>
-                <li><a href="/admin">Admin</a></li>
                 <li><a href="/upload">Upload</a></li>
             </ul>
         </nav>
     </header>
-
-    <section>
-        <h1>Upload Your Gaming Clip</h1>
-        <form id="uploadForm" enctype="multipart/form-data">
+    <div class="container">
+        <h1>Upload Your Video Clip</h1>
+        <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
+            <!-- Name Field First -->
             <label for="Name">Name:</label>
-            <input type="text" id="Name" name="Name" required>
-            <br>
-            <label for="clipTitle">Title:</label>
-            <input type="text" id="clipTitle" name="clipTitle" required>
-            <br>
-            <label for="clip">Upload Clip:</label>
-            <input type="file" id="clip" name="clip" required>
-            <br>
-            <button type="submit">Upload</button>
+            <input type="text" id="Name" name="Name" required><br><br>
+            
+            <!-- Title Field Next -->
+            <label for="clipTitle">Title of Clip:</label>
+            <input type="text" id="clipTitle" name="clipTitle" required><br><br>
+
+            <!-- File Upload Last -->
+            <label for="clip">Choose Video Clip:</label>
+            <input type="file" id="clip" name="clip" accept="video/*" required><br><br>
+            
+            <!-- Submit Button -->
+            <button type="submit">Upload Video</button>
         </form>
 
-        <!-- Progress bar -->
-        <div class="progress-container">
-            <div class="progress-bar" id="progressBar"></div>
+        <div id="progressContainer" class="progress-container" style="display: none;">
+            <div id="progressBar" class="progress-bar"></div>
         </div>
 
-        <!-- Success message -->
-        <div class="success-message" id="successMessage">
-            <p>Video Uploaded Successfully!</p>
+        <div id="errorMessage" class="error-message"></div>
+        <div id="successMessage" class="success-message">
+            <p>Upload Successful! Your video is now live.</p>
         </div>
-
-        <!-- Error message -->
-        <div class="error-message" id="errorMessage">
-            <p>You have already uploaded this clip.</p> <!-- This error message is customized -->
-        </div>
-    </section>
+    </div>
 
     <script>
-        const uploadForm = document.getElementById('uploadForm');
-        const progressBar = document.getElementById('progressBar');
-        const successMessage = document.getElementById('successMessage');
-        const errorMessage = document.getElementById('errorMessage');
+        const form = document.getElementById("uploadForm");
+        const progressContainer = document.getElementById("progressContainer");
+        const progressBar = document.getElementById("progressBar");
+        const errorMessage = document.getElementById("errorMessage");
+        const successMessage = document.getElementById("successMessage");
 
-        uploadForm.addEventListener('submit', function(event) {
-            event.preventDefault(); // Prevent default form submission
+        form.addEventListener("submit", function(event) {
+            event.preventDefault(); // Prevent form from submitting immediately
 
-            const formData = new FormData(uploadForm);
+            const formData = new FormData(form);
             const xhr = new XMLHttpRequest();
+            xhr.open("POST", "/upload", true);
 
-            xhr.open('POST', '/upload', true);
-
-            // Track the progress of the upload
-            xhr.upload.addEventListener('progress', function(event) {
-                if (event.lengthComputable) {
-                    const percent = (event.loaded / event.total) * 100;
-                    progressBar.style.width = percent + '%';
+            xhr.upload.addEventListener("progress", function(e) {
+                if (e.lengthComputable) {
+                    const percent = (e.loaded / e.total) * 100;
+                    progressContainer.style.display = "block";
+                    progressBar.style.width = percent + "%";
                 }
             });
 
-            // Handle the response from the server
             xhr.onload = function() {
                 if (xhr.status === 200) {
-                    const response = JSON.parse(xhr.responseText);
-                    if (response.success) {
-                        successMessage.style.display = 'block';
-                        errorMessage.style.display = 'none';
-                        progressBar.style.width = '0%'; // Reset progress bar
-                    } else {
-                        successMessage.style.display = 'none';
-                        errorMessage.style.display = 'block';
-                        errorMessage.innerHTML = <p>${response.message}</p>; // Show custom error message
-                    }
+                    successMessage.style.display = "block";
+                    errorMessage.style.display = "none";
                 } else {
-                    successMessage.style.display = 'none';
-                    errorMessage.style.display = 'block';
-                    errorMessage.innerHTML = '<p>Error uploading video. Please try again later.</p>'; // Default error message
+                    errorMessage.textContent = "Error uploading video: " + xhr.responseText;
+                    errorMessage.style.display = "block";
                 }
             };
 
-            // Send the form data
+            xhr.onerror = function() {
+                errorMessage.textContent = "An error occurred while uploading.";
+                errorMessage.style.display = "block";
+            };
+
             xhr.send(formData);
         });
     </script>
