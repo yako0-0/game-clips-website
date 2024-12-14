@@ -99,7 +99,7 @@ async function deleteFromGoogleDrive(fileId) {
 
 // Routes
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/views/index.html');
+    res.sendFile(path.join(__dirname, 'views', 'index.html'));
 });
 
 app.get('/watch', (req, res) => {
@@ -143,13 +143,14 @@ app.get('/admin', (req, res) => {
 });
 
 app.get('/upload', (req, res) => {
-    res.sendFile(__dirname + '/views/upload.html');
+    res.sendFile(path.join(__dirname, 'views', 'upload.html'));
 });
 
 app.get('/revoholic', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'revoholic.html')); // Added route for '/revoholic'
 });
 
+// Admin login (make sure the body is parsed as JSON)
 app.post('/admin-login', express.json(), (req, res) => {
     const { username, password } = req.body;
 
@@ -230,6 +231,7 @@ app.post('/upload', (req, res) => {
     });
 });
 
+// Handle video deletion
 app.post('/delete/:filename', isAdmin, (req, res) => {
     const videoListPath = path.join(__dirname, 'videos.json');
     const filePath = path.join(__dirname, 'public', 'uploads', req.params.filename);
@@ -267,6 +269,10 @@ app.post('/delete/:filename', isAdmin, (req, res) => {
             res.status(404).send('Video not found.');
         }
     });
+});
+
+app.get('/revoholic', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'revoholic.html'));
 });
 
 app.listen(PORT, () => {
