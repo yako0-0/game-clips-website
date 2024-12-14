@@ -146,6 +146,10 @@ app.get('/upload', (req, res) => {
     res.sendFile(__dirname + '/views/upload.html');
 });
 
+app.get('/revoholic', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'revoholic.html')); // Added route for '/revoholic'
+});
+
 app.post('/admin-login', express.json(), (req, res) => {
     const { username, password } = req.body;
 
@@ -214,7 +218,7 @@ app.post('/upload', (req, res) => {
                             }
 
                             const clipPath = `/uploads/${filename}`;
-                            res.send(`<h2>Upload Successful!</h2><p>Clip: <a href="${clipPath}" target="_blank">${title}</a></p><a href="/upload">Upload Another</a>`);
+                            res.send({ success: true, message: 'Video Uploaded Successfully!', clipPath: clipPath });
                         });
                     })
                     .catch(err => {
@@ -249,10 +253,10 @@ app.post('/delete/:filename', isAdmin, (req, res) => {
 
                         fs.unlink(filePath, (err) => {
                             if (err) {
-                                return res.status(500).send('Error deleting the video file.');
+                                return res.status(500).send('Error deleting video file.');
                             }
 
-                            res.redirect('/watch');
+                            res.send('Video deleted successfully.');
                         });
                     });
                 })
@@ -260,15 +264,11 @@ app.post('/delete/:filename', isAdmin, (req, res) => {
                     return res.status(500).send('Error deleting video from Google Drive.');
                 });
         } else {
-            return res.status(400).send('Video not found or no Google Drive file ID.');
+            res.status(404).send('Video not found.');
         }
     });
 });
 
-app.get('/revoholic', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'revoholic.html'));
-});
-
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server is running on http://localhost:${PORT}`);
 });
