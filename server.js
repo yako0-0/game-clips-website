@@ -1,3 +1,4 @@
+require('dotenv').config(); // Load environment variables from .env file
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
@@ -22,7 +23,21 @@ const storage = multer.diskStorage({
     }
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 50 * 1024 * 1024 }, // Limit file size to 50MB
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = /mp4|mov|avi|mkv/; // Accept only video files
+        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+        const mimeType = allowedTypes.test(file.mimetype);
+        
+        if (extname && mimeType) {
+            return cb(null, true);
+        } else {
+            return cb(new Error('Only video files are allowed!'), false);
+        }
+    }
+});
 
 // Middleware to serve static files
 app.use(express.static('public'));
@@ -31,14 +46,10 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 // Add session middleware
 app.use(session({
-    secret: 'your_secret_key', // Secret key for the session
+    secret: process.env.SESSION_SECRET, // Secret key for the session (from .env)
     resave: false,
     saveUninitialized: true
 }));
-
-// Define admin credentials
-const ADMIN_USERNAME = 'revoholics';
-const ADMIN_PASSWORD = '091lebanon091?'; // Change to a stronger password in production
 
 // Admin authentication middleware
 function isAdmin(req, res, next) {
@@ -56,12 +67,10 @@ app.get('/', (req, res) => {
 app.get('/watch', (req, res) => {
     const videoListPath = path.join(__dirname, 'videos.json');
 
-    // Check if the user has already watched any clips, store in session
     if (!req.session.watchedClips) {
         req.session.watchedClips = []; // Initialize the watched clips list in the session if not already present
     }
 
-    // Read the uploaded videos from videos.json
     fs.readFile(videoListPath, (err, data) => {
         if (err) {
             console.error("Error reading video list:", err);
@@ -69,37 +78,29 @@ app.get('/watch', (req, res) => {
         }
 
         const videos = data ? JSON.parse(data) : [];
-
-        // Filter out videos that the user has already watched
         const watchList = videos.filter(clip => !req.session.watchedClips.includes(clip.filename));
         const watchedList = videos.filter(clip => req.session.watchedClips.includes(clip.filename));
 
-        // Send the videos data to the Watch page dynamically
         res.render('watch', { videos: watchList, watchedList: watchedList, isAdmin: req.session && req.session.isAdmin });
     });
 });
 
-// Route to handle when a user watches a clip
 app.post('/watch/:filename', (req, res) => {
     const { filename } = req.params;
 
-    // If user has already watched it, skip
     if (req.session.watchedClips && req.session.watchedClips.includes(filename)) {
         return res.redirect('/watch');
     }
 
-    // Add the watched clip to the user's session
     if (!req.session.watchedClips) {
         req.session.watchedClips = [];
     }
     req.session.watchedClips.push(filename);
 
-    // Redirect back to the watch page after marking as watched
     res.redirect('/watch');
 });
 
 app.get('/admin', (req, res) => {
-    // Send login page for admin
     res.sendFile(path.join(__dirname, 'views', 'admin.html'));
 });
 
@@ -107,45 +108,35 @@ app.get('/upload', (req, res) => {
     res.sendFile(__dirname + '/views/upload.html');
 });
 
-app.post('/admin-login', express.json(), (req, res) => { // Use express.json() to parse the body
+app.post('/admin-login', express.json(), (req, res) => {
     const { username, password } = req.body;
 
-    // Log the received username and password for debugging
-    console.log("Received credentials:", { username, password });
-
-    // Check if the provided username and password match the admin credentials
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-        req.session.isAdmin = true; // Set session variable for admin
-        console.log("Login successful! Session set.");
-        return res.json({ success: true, message: 'Login successful! Redirecting to dashboard...' }); // Return success message
+    if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
+        req.session.isAdmin = true;
+        return res.json({ success: true, message: 'Login successful! Redirecting to dashboard...' });
     } else {
-        console.log("Login failed. Invalid username or password.");
         return res.json({ success: false, message: 'Invalid username or password. Please try again.' });
     }
 });
 
-// Admin dashboard route
 app.get('/admin-dashboard', isAdmin, (req, res) => {
     res.send('<h1>Welcome to the Admin Dashboard</h1><p>You can now manage the content.</p>');
 });
 
-// Handle video uploads
-app.post('/upload', upload.single('clip'), (req, res) => { // 'clip' matches the form field name
+app.post('/upload', upload.single('clip'), (req, res) => {
     if (!req.file) {
         return res.status(400).send('No file uploaded.');
     }
 
-    const title = req.body.clipTitle; // 'clipTitle' matches the form field name
+    const title = req.body.clipTitle;
     const filename = req.file.filename;
-    const name = req.body.Name; // Capture the 'Name' field
+    const name = req.body.Name;
 
-    // Generate a hash for the uploaded file to check for duplicates
     const fileBuffer = fs.readFileSync(path.join(__dirname, 'public', 'uploads', filename));
     const fileHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
 
     const videoListPath = path.join(__dirname, 'videos.json');
     
-    // Check for duplicates
     fs.readFile(videoListPath, (err, data) => {
         if (err) {
             return res.status(500).send('Error reading video list.');
@@ -153,10 +144,8 @@ app.post('/upload', upload.single('clip'), (req, res) => { // 'clip' matches the
 
         const videos = data ? JSON.parse(data) : [];
 
-        // Check if the same file already exists based on its hash
         const duplicate = videos.find(video => video.hash === fileHash);
         if (duplicate) {
-            // Remove the uploaded file from the uploads folder
             fs.unlink(path.join(__dirname, 'public', 'uploads', filename), (unlinkErr) => {
                 if (unlinkErr) {
                     return res.status(500).send('Error deleting the uploaded duplicate file.');
@@ -164,8 +153,7 @@ app.post('/upload', upload.single('clip'), (req, res) => { // 'clip' matches the
                 return res.status(400).send('Duplicate video detected. You cannot upload the same video again.');
             });
         } else {
-            // Save video data (title, filename, Name, and file hash) in a JSON file
-            const videoData = { title, filename, Name: name, hash: fileHash }; // Include the file hash
+            const videoData = { title, filename, Name: name, hash: fileHash };
             videos.push(videoData);
 
             fs.writeFile(videoListPath, JSON.stringify(videos, null, 2), (err) => {
@@ -180,12 +168,10 @@ app.post('/upload', upload.single('clip'), (req, res) => { // 'clip' matches the
     });
 });
 
-// Delete video route (only accessible by admin)
 app.post('/delete/:filename', isAdmin, (req, res) => {
     const videoListPath = path.join(__dirname, 'videos.json');
     const filePath = path.join(__dirname, 'public', 'uploads', req.params.filename);
 
-    // Remove video from the JSON file
     fs.readFile(videoListPath, (err, data) => {
         if (err) {
             return res.status(500).send('Error reading video list.');
@@ -199,24 +185,21 @@ app.post('/delete/:filename', isAdmin, (req, res) => {
                 return res.status(500).send('Error saving video list after deletion.');
             }
 
-            // Delete the actual video file
             fs.unlink(filePath, (err) => {
                 if (err) {
                     return res.status(500).send('Error deleting the video file.');
                 }
 
-                res.redirect('/watch'); // Redirect to the watch page after deletion
+                res.redirect('/watch');
             });
         });
     });
 });
 
-// Revoholic Page Route
 app.get('/revoholic', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'revoholic.html'));
 });
 
-// Start server
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
