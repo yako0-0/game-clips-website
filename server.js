@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const fs = require('fs');
 const session = require('express-session');
 const crypto = require('crypto');
+const { google } = require('googleapis');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -23,6 +24,7 @@ const storage = multer.diskStorage({
     }
 });
 
+// Set up Multer with file size limit (50MB) and file filter for video types
 const upload = multer({
     storage: storage,
     limits: { fileSize: 50 * 1024 * 1024 }, // Limit file size to 50MB
@@ -37,7 +39,7 @@ const upload = multer({
             return cb(new Error('Only video files are allowed!'), false);
         }
     }
-});
+}).single('clip');
 
 // Middleware to serve static files
 app.use(express.static('public'));
@@ -57,6 +59,42 @@ function isAdmin(req, res, next) {
         return next();
     }
     res.redirect('/admin'); // Redirect to login if not an admin
+}
+
+// Google Drive API setup
+const drive = google.drive({ version: 'v3', auth: process.env.GOOGLE_API_KEY });
+
+async function uploadToGoogleDrive(filePath, fileName) {
+    try {
+        const fileMetadata = {
+            name: fileName,
+            parents: [process.env.GOOGLE_DRIVE_FOLDER_ID] // Folder ID to store videos
+        };
+        const media = {
+            mimeType: 'video/mp4', // Assuming video is in mp4 format, adjust accordingly
+            body: fs.createReadStream(filePath)
+        };
+        const res = await drive.files.create({
+            resource: fileMetadata,
+            media: media,
+            fields: 'id'
+        });
+        return res.data.id; // Return file ID from Google Drive
+    } catch (error) {
+        console.error('Error uploading file to Google Drive:', error);
+        throw new Error('Google Drive upload failed');
+    }
+}
+
+async function deleteFromGoogleDrive(fileId) {
+    try {
+        await drive.files.delete({
+            fileId: fileId
+        });
+    } catch (error) {
+        console.error('Error deleting file from Google Drive:', error);
+        throw new Error('Google Drive deletion failed');
+    }
 }
 
 // Routes
@@ -123,48 +161,68 @@ app.get('/admin-dashboard', isAdmin, (req, res) => {
     res.send('<h1>Welcome to the Admin Dashboard</h1><p>You can now manage the content.</p>');
 });
 
-app.post('/upload', upload.single('clip'), (req, res) => {
-    if (!req.file) {
-        return res.status(400).send('No file uploaded.');
-    }
-
-    const title = req.body.clipTitle;
-    const filename = req.file.filename;
-    const name = req.body.Name;
-
-    const fileBuffer = fs.readFileSync(path.join(__dirname, 'public', 'uploads', filename));
-    const fileHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
-
-    const videoListPath = path.join(__dirname, 'videos.json');
-    
-    fs.readFile(videoListPath, (err, data) => {
+// Handle video uploads
+app.post('/upload', (req, res) => {
+    upload(req, res, async (err) => {
         if (err) {
-            return res.status(500).send('Error reading video list.');
+            if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(400).send('Error: File too large. Maximum allowed size is 50MB.');
+            }
+            return res.status(400).send('Error uploading file: ' + err.message);
         }
 
-        const videos = data ? JSON.parse(data) : [];
-
-        const duplicate = videos.find(video => video.hash === fileHash);
-        if (duplicate) {
-            fs.unlink(path.join(__dirname, 'public', 'uploads', filename), (unlinkErr) => {
-                if (unlinkErr) {
-                    return res.status(500).send('Error deleting the uploaded duplicate file.');
-                }
-                return res.status(400).send('Duplicate video detected. You cannot upload the same video again.');
-            });
-        } else {
-            const videoData = { title, filename, Name: name, hash: fileHash };
-            videos.push(videoData);
-
-            fs.writeFile(videoListPath, JSON.stringify(videos, null, 2), (err) => {
-                if (err) {
-                    return res.status(500).send('Error saving video data.');
-                }
-
-                const clipPath = `/uploads/${filename}`;
-                res.send(`<h2>Upload Successful!</h2><p>Clip: <a href="${clipPath}" target="_blank">${title}</a></p><a href="/upload">Upload Another</a>`);
-            });
+        if (!req.file) {
+            return res.status(400).send('No file uploaded.');
         }
+
+        const title = req.body.clipTitle;
+        const filename = req.file.filename;
+        const name = req.body.Name;
+
+        const fileBuffer = fs.readFileSync(path.join(__dirname, 'public', 'uploads', filename));
+        const fileHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+
+        const videoListPath = path.join(__dirname, 'videos.json');
+        
+        fs.readFile(videoListPath, (err, data) => {
+            if (err) {
+                return res.status(500).send('Error reading video list.');
+            }
+
+            const videos = data ? JSON.parse(data) : [];
+
+            const duplicate = videos.find(video => video.hash === fileHash);
+            if (duplicate) {
+                fs.unlink(path.join(__dirname, 'public', 'uploads', filename), (unlinkErr) => {
+                    if (unlinkErr) {
+                        return res.status(500).send('Error deleting the uploaded duplicate file.');
+                    }
+                    return res.status(400).send('Duplicate video detected. You cannot upload the same video again.');
+                });
+            } else {
+                const videoData = { title, filename, Name: name, hash: fileHash };
+
+                // Upload video to Google Drive
+                uploadToGoogleDrive(path.join(__dirname, 'public', 'uploads', filename), filename)
+                    .then(fileId => {
+                        videoData.googleDriveFileId = fileId;
+
+                        videos.push(videoData);
+                        fs.writeFile(videoListPath, JSON.stringify(videos, null, 2), (err) => {
+                            if (err) {
+                                return res.status(500).send('Error saving video data.');
+                            }
+
+                            const clipPath = `/uploads/${filename}`;
+                            res.send(`<h2>Upload Successful!</h2><p>Clip: <a href="${clipPath}" target="_blank">${title}</a></p><a href="/upload">Upload Another</a>`);
+                        });
+                    })
+                    .catch(err => {
+                        fs.unlink(path.join(__dirname, 'public', 'uploads', filename), () => {}); // Delete file if upload fails
+                        return res.status(500).send('Failed to upload video to Google Drive.');
+                    });
+            }
+        });
     });
 });
 
@@ -178,21 +236,32 @@ app.post('/delete/:filename', isAdmin, (req, res) => {
         }
 
         const videos = JSON.parse(data);
-        const updatedVideos = videos.filter(video => video.filename !== req.params.filename);
+        const videoToDelete = videos.find(video => video.filename === req.params.filename);
+        if (videoToDelete && videoToDelete.googleDriveFileId) {
+            deleteFromGoogleDrive(videoToDelete.googleDriveFileId)
+                .then(() => {
+                    const updatedVideos = videos.filter(video => video.filename !== req.params.filename);
 
-        fs.writeFile(videoListPath, JSON.stringify(updatedVideos, null, 2), (err) => {
-            if (err) {
-                return res.status(500).send('Error saving video list after deletion.');
-            }
+                    fs.writeFile(videoListPath, JSON.stringify(updatedVideos, null, 2), (err) => {
+                        if (err) {
+                            return res.status(500).send('Error saving video list after deletion.');
+                        }
 
-            fs.unlink(filePath, (err) => {
-                if (err) {
-                    return res.status(500).send('Error deleting the video file.');
-                }
+                        fs.unlink(filePath, (err) => {
+                            if (err) {
+                                return res.status(500).send('Error deleting the video file.');
+                            }
 
-                res.redirect('/watch');
-            });
-        });
+                            res.redirect('/watch');
+                        });
+                    });
+                })
+                .catch(err => {
+                    return res.status(500).send('Error deleting video from Google Drive.');
+                });
+        } else {
+            return res.status(400).send('Video not found or no Google Drive file ID.');
+        }
     });
 });
 
