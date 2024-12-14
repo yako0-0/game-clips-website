@@ -1,0 +1,505 @@
+/* General Styles */
+body {
+    background-color: #121212;
+    font-family: 'Arial', sans-serif;
+    color: white;
+    margin: 0;
+    padding: 0;
+}
+
+/* Navbar Styles */
+.navbar {
+    background-color: #333;
+    padding: 10px;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.navbar ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+}
+
+.navbar li {
+    margin: 0 15px;
+}
+
+.navbar a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    display: block;
+}
+
+.navbar a:hover {
+    background-color: #ddd;
+    border-radius: 5px;
+}
+
+/* Homepage Styles */
+.homepage {
+    background-color: #121212;
+    color: white;
+    font-family: 'Arial', sans-serif;
+    text-align: center;
+    padding: 20px;
+}
+
+.hero-section {
+    margin-top: 50px;
+    background: linear-gradient(45deg, #ff4d4d, #ff8c00);
+    padding: 40px 20px;
+    border-radius: 8px;
+}
+
+.hero-section h1 {
+    font-size: 36px;
+    margin: 0;
+}
+
+.hero-section p {
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+.hero-section .btn {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+}
+
+.hero-section .btn:hover {
+    background-color: #45a049;
+}
+
+.feature-section {
+    margin-top: 40px;
+}
+
+.feature-section h2 {
+    font-size: 28px;
+    margin-bottom: 20px;
+}
+
+.feature-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.feature-section li {
+    font-size: 18px;
+    margin: 10px 0;
+}
+
+footer {
+    text-align: center;
+    color: #bbb;
+    font-size: 14px;
+    margin-top: 40px;
+}
+
+/* Admin Page Styles */
+.adminpage {
+    background-color: #121212;
+    color: white;
+    font-family: 'Arial', sans-serif;
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.adminpage h1 {
+    font-size: 36px;
+    color: #ff4d4d;
+    margin-bottom: 30px;
+}
+
+.adminpage .login-form {
+    background: linear-gradient(45deg, #333, #444);
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+    display: inline-block;
+    margin-top: 50px;
+}
+
+.adminpage .login-form input {
+    padding: 12px;
+    margin: 10px 0;
+    width: 80%;
+    border: none;
+    border-radius: 5px;
+    background-color: #222;
+    color: white;
+    font-size: 16px;
+}
+
+.adminpage .login-form input:focus {
+    outline: none;
+    background-color: #444;
+}
+
+.adminpage .login-form button {
+    padding: 12px 25px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 18px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.adminpage .login-form button:hover {
+    background-color: #45a049;
+}
+
+.adminpage .login-form .error-message {
+    color: #ff4d4d;
+    font-size: 16px;
+    margin-top: 15px;
+}
+
+footer {
+    margin-top: 40px;
+    font-size: 14px;
+    color: #bbb;
+}
+
+/* Upload Page Styles */
+.uploadpage {
+    font-family: 'Arial', sans-serif;
+    background-color: #1a1a1a;
+    color: #fff;
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.uploadpage h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.uploadpage form {
+    margin-top: 20px;
+}
+
+.uploadpage input[type="text"],
+.uploadpage input[type="file"] {
+    padding: 10px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 5px;
+    width: 80%;
+    background-color: #333;
+    color: white;
+}
+
+.uploadpage button {
+    padding: 10px 20px;
+    border: none;
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.uploadpage button:hover {
+    background-color: #45a049;
+}
+
+/* Watch Page Styles */
+.clips {
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.page-title {
+    font-size: 36px;
+    color: #ff4d4d;
+    margin-bottom: 30px;
+}
+
+.video-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Adjust columns based on screen size */
+    gap: 20px;
+    justify-items: center; /* Center align each video item */
+    padding: 20px;
+}
+
+/* Each video item */
+.video-item {
+    background-color: #1a1a1a;
+    padding: 20px;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 300px;
+    box-sizing: border-box; /* Ensure padding is included in the width */
+}
+
+/* Video Title */
+.video-item h3 {
+    font-size: 24px;
+    color: #ff4d4d;
+    margin-bottom: 10px;
+    word-wrap: break-word; /* Ensure long titles break and don't overflow */
+}
+
+/* Video Player */
+.video-item video {
+    width: 100%;
+    height: auto; /* Maintain aspect ratio */
+    border-radius: 8px;
+    display: block; /* Make sure it's a block element for better alignment */
+    margin-bottom: 10px; /* Space between video and the title */
+}
+
+/* Delete Button */
+.video-item form {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.video-item button {
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.video-item button:hover {
+    background-color: #e60000; /* Darker red when hovered */
+}
+
+/* Footer Styles */
+footer {
+    text-align: center;
+    color: #bbb;
+    font-size: 14px;
+    margin-top: 40px;
+}
+
+/* Responsive Design for Smaller Screens */
+@media (max-width: 768px) {
+    .video-list {
+        grid-template-columns: 1fr; /* Stack videos in a single column on smaller screens */
+    }
+
+    .video-item {
+        max-width: 100%; /* Allow video item to take full width on smaller screens */
+    }
+}
+
+/* Container for video title */
+.reveal-container {
+    display: flex;
+    justify-content: center; /* Center the content */
+    align-items: center; /* Vertically center the content */
+    margin-top: 20px;
+}
+
+/* Styling for the hidden box with the word */
+.hidden-box {
+    display: inline-block;
+    background-color: black;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    color: white;
+    margin-right: 10px; /* Space between the word inside () and the rest of the text */
+}
+
+/* Placeholder text inside the box */
+.hidden-placeholder {
+    color: white;
+    font-size: 16px;
+}
+
+/* Styling for the rest of the title */
+span {
+    display: inline;
+    font-size: 18px;
+    color: white;
+}
+
+/* General Styles */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #1e1e1e; /* Dark background */
+    color: white;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+
+/* Navbar */
+nav {
+    background-color: #111;
+    padding: 20px;
+    position: sticky;
+    top: 0;
+    width: 100%;
+    z-index: 100;
+}
+nav ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+nav ul li {
+    display: inline;
+    margin: 0 20px;
+}
+nav ul li a {
+    text-decoration: none;
+    color: #ff9f00;
+    font-size: 1.2em;
+}
+nav ul li a:hover {
+    color: #ff6600;
+}
+
+/* About Section */
+.about {
+    margin-top: 40px;
+}
+
+.square {
+    background-color: #333;
+    width: 300px;
+    height: 300px;
+    margin: 0 auto;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.square h2 {
+    font-size: 1.8em;
+    margin-bottom: 15px;
+}
+
+.square p {
+    font-size: 1.1em;
+}
+
+/* Social Media Squares */
+.socials {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px;
+    margin-top: 50px;
+    padding: 0 20px;
+}
+
+.social-square {
+    width: 250px;
+    height: 250px;
+    margin: 0 auto;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Vertically centers content */
+    align-items: center; /* Horizontally centers content */
+    position: relative;
+}
+
+/* Platform-Specific Colors */
+.social-square.twitch {
+    background-color: #9146FF; /* Twitch purple */
+}
+
+.social-square.tiktok {
+    background-color: #000000; /* TikTok black */
+}
+
+.social-square.youtube {
+    background-color: #550303; /* YouTube red */
+}
+
+.social-square.instagram {
+    background-color: #E4405F; /* Instagram pink */
+}
+
+/* Add size to social logos */
+.social-logo {
+    width: 60%; /* Adjust the size to medium */
+    height: auto; /* Maintain aspect ratio */
+    margin-bottom: 20px; /* Add space between the logo and the button */
+}
+
+/* Social Media Square Titles */
+.social-square h3 {
+    font-size: 1.5em;
+    color: white; /* Keep text color white for better visibility */
+}
+
+/* Social Media Buttons */
+.social-btn {
+    background-color: #ff9f00;
+    color: white;
+    padding: 10px;
+    font-size: 1.2em;
+    text-decoration: none;
+    border-radius: 5px;
+    display: inline-block;
+}
+
+.social-btn:hover {
+    background-color: #ff6600;
+}
+
+/* Responsive Layout */
+@media (max-width: 768px) {
+    .socials {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Revoholic Section */
+.revoholic-section {
+    margin-top: 40px;
+    padding: 40px;
+    text-align: center;
+}
+
+.revoholic-logo {
+    margin-bottom: 20px;
+}
+
+.revoholic-logo img {
+    width: 200px; /* Adjust the size as needed */
+    height: auto;
+}
+
+.revoholic-btn {
+    display: inline-block;
+    background-color: #9b59b6; /* Purple background */
+    color: white;
+    padding: 15px 30px;
+    font-size: 1.2em;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-top: 20px;
+    transition: background-color 0.3s ease;
+}
+
+.revoholic-btn:hover {
+    background-color: #8e44ad; /* Darker purple on hover */
+}

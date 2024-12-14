@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch Clips</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/watch">Watch</a></li>
+                <li><a href="/admin">Admin</a></li>
+                <li><a href="/upload">Upload</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section>
+        <h1>Watch Gaming Clips</h1>
+
+        <!-- Watch List -->
+        <h2>Watch List</h2>
+        <div class="video-list">
+            <% videos.forEach(function(clip) { %>
+                <div class="video-item">
+                    <h3>Uploaded by: <%= clip.Name %></h3>
+
+                    <video controls>
+                        <source src="<%= '/uploads/' + clip.filename %>" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+
+                    <div class="reveal-container">
+                        <span class="hidden-box" data-title="<%= clip.title.match(/\((.*?)\)/) ? clip.title.match(/\((.*?)\)/)[1] : '' %>">
+                            <span class="hidden-placeholder">Click to reveal</span>
+                        </span>
+
+                        <span>
+                            <%= clip.title.replace(/\((.*?)\)/, '') %>
+                        </span>
+                    </div>
+
+                    <!-- Mark as Watched button if clip is not in watched list -->
+                    <% if (!watchedList.includes(clip.filename)) { %>
+                        <form action="/watch/<%= clip.filename %>" method="POST">
+                            <button type="submit">Mark as Watched</button>
+                        </form>
+                    <% } else { %>
+                        <p>This clip has already been watched!</p>
+                    <% } %>
+
+                    <% if (isAdmin) { %>
+                        <form action="/delete/<%= clip.filename %>" method="POST">
+                            <button type="submit">Delete</button>
+                        </form>
+                    <% } %>
+                </div>
+            <% }); %>
+        </div>
+
+        <!-- Watched List -->
+        <h2>Already Watched</h2>
+        <div class="video-list">
+            <% watchedList.forEach(function(clip) { %>
+                <div class="video-item">
+                    <h3>Uploaded by: <%= clip.Name %></h3>
+
+                    <video controls>
+                        <source src="<%= '/uploads/' + clip.filename %>" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+
+                    <div class="reveal-container">
+                        <span class="hidden-box" data-title="<%= clip.title.match(/\((.*?)\)/) ? clip.title.match(/\((.*?)\)/)[1] : '' %>">
+                            <span class="hidden-placeholder">Click to reveal</span>
+                        </span>
+
+                        <span>
+                            <%= clip.title.replace(/\((.*?)\)/, '') %>
+                        </span>
+                    </div>
+
+                    <p>This clip has already been watched!</p>
+
+                    <% if (isAdmin) { %>
+                        <form action="/delete/<%= clip.filename %>" method="POST">
+                            <button type="submit">Delete</button>
+                        </form>
+                    <% } %>
+                </div>
+            <% }); %>
+        </div>
+    </section>
+    
+    <script>
+       document.addEventListener('DOMContentLoaded', () => {
+            const hiddenBoxes = document.querySelectorAll('.hidden-box');
+            
+            hiddenBoxes.forEach(box => {
+                box.addEventListener('click', () => {
+                    const title = box.getAttribute('data-title'); // Extract word inside ()
+                    const placeholder = box.querySelector('.hidden-placeholder');
+                    
+                    if (placeholder) {
+                        placeholder.remove(); // Remove the placeholder text
+                        box.textContent = title; // Replace with the word inside ()
+                    }
+                });
+            });
+        });
+    </script>
+    
+</body>
+</html>
