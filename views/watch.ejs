@@ -34,6 +34,7 @@
                     </video>
 
                     <div class="reveal-container">
+                        <!-- Reveal title part inside parentheses -->
                         <span class="hidden-box" data-title="<%= clip.title.match(/\((.*?)\)/) ? clip.title.match(/\((.*?)\)/)[1] : '' %>">
                             <span class="hidden-placeholder">Click to reveal</span>
                         </span>
@@ -43,7 +44,7 @@
                         </span>
                     </div>
 
-                    <!-- Mark as Watched button if clip is not in watched list -->
+                    <!-- Mark as Watched button if clip is not in the watched list -->
                     <% if (!watchedList.includes(clip.filename)) { %>
                         <form action="/watch/<%= clip.filename %>" method="POST">
                             <button type="submit">Mark as Watched</button>
@@ -52,6 +53,7 @@
                         <p>This clip has already been watched!</p>
                     <% } %>
 
+                    <!-- Admin section for deletion -->
                     <% if (isAdmin) { %>
                         <form action="/delete/<%= clip.filename %>" method="POST">
                             <button type="submit">Delete</button>
@@ -85,6 +87,7 @@
 
                     <p>This clip has already been watched!</p>
 
+                    <!-- Admin section for deletion -->
                     <% if (isAdmin) { %>
                         <form action="/delete/<%= clip.filename %>" method="POST">
                             <button type="submit">Delete</button>
@@ -94,9 +97,10 @@
             <% }); %>
         </div>
     </section>
-    
+
     <script>
-       document.addEventListener('DOMContentLoaded', () => {
+        // Add event listener for click on hidden boxes to reveal the title part inside parentheses
+        document.addEventListener('DOMContentLoaded', () => {
             const hiddenBoxes = document.querySelectorAll('.hidden-box');
             
             hiddenBoxes.forEach(box => {
