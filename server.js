@@ -6,7 +6,6 @@ const bodyParser = require('body-parser');
 const fs = require('fs');
 const session = require('express-session');
 const crypto = require('crypto');
-const { google } = require('googleapis');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -61,45 +60,9 @@ function isAdmin(req, res, next) {
     res.redirect('/admin'); // Redirect to login if not an admin
 }
 
-// Google Drive API setup
-const drive = google.drive({ version: 'v3', auth: process.env.GOOGLE_API_KEY });
-
-async function uploadToGoogleDrive(filePath, fileName) {
-    try {
-        const fileMetadata = {
-            name: fileName,
-            parents: [process.env.GOOGLE_DRIVE_FOLDER_ID] // Folder ID to store videos
-        };
-        const media = {
-            mimeType: 'video/mp4', // Assuming video is in mp4 format, adjust accordingly
-            body: fs.createReadStream(filePath)
-        };
-        const res = await drive.files.create({
-            resource: fileMetadata,
-            media: media,
-            fields: 'id'
-        });
-        return res.data.id; // Return file ID from Google Drive
-    } catch (error) {
-        console.error('Error uploading file to Google Drive:', error);
-        throw new Error('Google Drive upload failed');
-    }
-}
-
-async function deleteFromGoogleDrive(fileId) {
-    try {
-        await drive.files.delete({
-            fileId: fileId
-        });
-    } catch (error) {
-        console.error('Error deleting file from Google Drive:', error);
-        throw new Error('Google Drive deletion failed');
-    }
-}
-
 // Routes
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'index.html'));
+    res.sendFile(__dirname + '/views/index.html');
 });
 
 app.get('/watch', (req, res) => {
@@ -143,14 +106,9 @@ app.get('/admin', (req, res) => {
 });
 
 app.get('/upload', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'upload.html'));
+    res.sendFile(__dirname + '/views/upload.html');
 });
 
-app.get('/revoholic', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'revoholic.html')); // Added route for '/revoholic'
-});
-
-// Admin login (make sure the body is parsed as JSON)
 app.post('/admin-login', express.json(), (req, res) => {
     const { username, password } = req.body;
 
@@ -168,7 +126,7 @@ app.get('/admin-dashboard', isAdmin, (req, res) => {
 
 // Handle video uploads
 app.post('/upload', (req, res) => {
-    upload(req, res, async (err) => {
+    upload(req, res, (err) => {
         if (err) {
             if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
                 return res.status(400).send('Error: File too large. Maximum allowed size is 50MB.');
@@ -206,32 +164,21 @@ app.post('/upload', (req, res) => {
                 });
             } else {
                 const videoData = { title, filename, Name: name, hash: fileHash };
+                videos.push(videoData);
 
-                // Upload video to Google Drive
-                uploadToGoogleDrive(path.join(__dirname, 'public', 'uploads', filename), filename)
-                    .then(fileId => {
-                        videoData.googleDriveFileId = fileId;
+                fs.writeFile(videoListPath, JSON.stringify(videos, null, 2), (err) => {
+                    if (err) {
+                        return res.status(500).send('Error saving video data.');
+                    }
 
-                        videos.push(videoData);
-                        fs.writeFile(videoListPath, JSON.stringify(videos, null, 2), (err) => {
-                            if (err) {
-                                return res.status(500).send('Error saving video data.');
-                            }
-
-                            const clipPath = `/uploads/${filename}`;
-                            res.send({ success: true, message: 'Video Uploaded Successfully!', clipPath: clipPath });
-                        });
-                    })
-                    .catch(err => {
-                        fs.unlink(path.join(__dirname, 'public', 'uploads', filename), () => {}); // Delete file if upload fails
-                        return res.status(500).send('Failed to upload video to Google Drive.');
-                    });
+                    const clipPath = `/uploads/${filename}`;
+                    res.send(`<h2>Upload Successful!</h2><p>Clip: <a href="${clipPath}" target="_blank">${title}</a></p><a href="/upload">Upload Another</a>`);
+                });
             }
         });
     });
 });
 
-// Handle video deletion
 app.post('/delete/:filename', isAdmin, (req, res) => {
     const videoListPath = path.join(__dirname, 'videos.json');
     const filePath = path.join(__dirname, 'public', 'uploads', req.params.filename);
@@ -242,32 +189,21 @@ app.post('/delete/:filename', isAdmin, (req, res) => {
         }
 
         const videos = JSON.parse(data);
-        const videoToDelete = videos.find(video => video.filename === req.params.filename);
-        if (videoToDelete && videoToDelete.googleDriveFileId) {
-            deleteFromGoogleDrive(videoToDelete.googleDriveFileId)
-                .then(() => {
-                    const updatedVideos = videos.filter(video => video.filename !== req.params.filename);
+        const updatedVideos = videos.filter(video => video.filename !== req.params.filename);
 
-                    fs.writeFile(videoListPath, JSON.stringify(updatedVideos, null, 2), (err) => {
-                        if (err) {
-                            return res.status(500).send('Error saving video list after deletion.');
-                        }
+        fs.writeFile(videoListPath, JSON.stringify(updatedVideos, null, 2), (err) => {
+            if (err) {
+                return res.status(500).send('Error saving video list after deletion.');
+            }
 
-                        fs.unlink(filePath, (err) => {
-                            if (err) {
-                                return res.status(500).send('Error deleting video file.');
-                            }
+            fs.unlink(filePath, (err) => {
+                if (err) {
+                    return res.status(500).send('Error deleting the video file.');
+                }
 
-                            res.send('Video deleted successfully.');
-                        });
-                    });
-                })
-                .catch(err => {
-                    return res.status(500).send('Error deleting video from Google Drive.');
-                });
-        } else {
-            res.status(404).send('Video not found.');
-        }
+                res.redirect('/watch');
+            });
+        });
     });
 });
 
@@ -276,5 +212,5 @@ app.get('/revoholic', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });

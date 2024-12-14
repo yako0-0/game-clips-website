@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+    <!-- Header Section -->
     <header>
         <nav class="navbar">
             <ul>
@@ -18,33 +19,37 @@
         </nav>
     </header>
 
+    <!-- Main Section for Watching Clips -->
     <section>
         <h1>Watch Gaming Clips</h1>
 
-        <!-- Watch List -->
+        <!-- Watch List Section -->
         <h2>Watch List</h2>
         <div class="video-list">
             <% videos.forEach(function(clip) { %>
                 <div class="video-item">
+                    <!-- Display the name of the uploader -->
                     <h3>Uploaded by: <%= clip.Name %></h3>
 
+                    <!-- Display the video player -->
                     <video controls>
                         <source src="<%= '/uploads/' + clip.filename %>" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
 
+                    <!-- Title reveal container -->
                     <div class="reveal-container">
-                        <!-- Reveal title part inside parentheses -->
                         <span class="hidden-box" data-title="<%= clip.title.match(/\((.*?)\)/) ? clip.title.match(/\((.*?)\)/)[1] : '' %>">
                             <span class="hidden-placeholder">Click to reveal</span>
                         </span>
 
+                        <!-- Display the video title -->
                         <span>
                             <%= clip.title.replace(/\((.*?)\)/, '') %>
                         </span>
                     </div>
 
-                    <!-- Mark as Watched button if clip is not in the watched list -->
+                    <!-- Button to mark as watched (if not already watched) -->
                     <% if (!watchedList.includes(clip.filename)) { %>
                         <form action="/watch/<%= clip.filename %>" method="POST">
                             <button type="submit">Mark as Watched</button>
@@ -53,7 +58,7 @@
                         <p>This clip has already been watched!</p>
                     <% } %>
 
-                    <!-- Admin section for deletion -->
+                    <!-- Admin delete button (only visible to admins) -->
                     <% if (isAdmin) { %>
                         <form action="/delete/<%= clip.filename %>" method="POST">
                             <button type="submit">Delete</button>
@@ -63,23 +68,27 @@
             <% }); %>
         </div>
 
-        <!-- Watched List -->
+        <!-- Watched List Section -->
         <h2>Already Watched</h2>
         <div class="video-list">
             <% watchedList.forEach(function(clip) { %>
                 <div class="video-item">
+                    <!-- Display the name of the uploader -->
                     <h3>Uploaded by: <%= clip.Name %></h3>
 
+                    <!-- Display the video player -->
                     <video controls>
                         <source src="<%= '/uploads/' + clip.filename %>" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
 
+                    <!-- Title reveal container -->
                     <div class="reveal-container">
                         <span class="hidden-box" data-title="<%= clip.title.match(/\((.*?)\)/) ? clip.title.match(/\((.*?)\)/)[1] : '' %>">
                             <span class="hidden-placeholder">Click to reveal</span>
                         </span>
 
+                        <!-- Display the video title -->
                         <span>
                             <%= clip.title.replace(/\((.*?)\)/, '') %>
                         </span>
@@ -87,7 +96,7 @@
 
                     <p>This clip has already been watched!</p>
 
-                    <!-- Admin section for deletion -->
+                    <!-- Admin delete button (only visible to admins) -->
                     <% if (isAdmin) { %>
                         <form action="/delete/<%= clip.filename %>" method="POST">
                             <button type="submit">Delete</button>
@@ -97,10 +106,10 @@
             <% }); %>
         </div>
     </section>
-
+    
+    <!-- JavaScript for Title Reveal -->
     <script>
-        // Add event listener for click on hidden boxes to reveal the title part inside parentheses
-        document.addEventListener('DOMContentLoaded', () => {
+       document.addEventListener('DOMContentLoaded', () => {
             const hiddenBoxes = document.querySelectorAll('.hidden-box');
             
             hiddenBoxes.forEach(box => {
