@@ -17,7 +17,7 @@ const oAuth2Client = new google.auth.OAuth2(
 // Generate the URL for the authentication prompt
 const authUrl = oAuth2Client.generateAuthUrl({
   access_type: 'offline',
-  scope: ['https://www.googleapis.com/auth/drive.metadata.readonly'], // Change this to your desired scopes
+  scope: ['https://drive.google.com/drive/u/0/folders/16XfDY_VHcl3rKpBljMdg3_BTW1hW_dbg'], // Change this to your desired scopes
 });
 
 console.log('Authorize this app by visiting this url:', authUrl);
